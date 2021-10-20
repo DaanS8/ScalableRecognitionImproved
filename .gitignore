@@ -5,6 +5,7 @@ __pycache__/
 
 *.f
 testset/
+data/
 
 # C extensions
 *.so
