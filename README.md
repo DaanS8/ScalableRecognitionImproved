@@ -57,48 +57,94 @@ Run `online.py` to test single images using the command line.
 
 ## How it works
 
-The faiss library developed by Facebook AI Research uses state-of-the-art data structures.
-Here we'll briefly (try to) explain the concepts behind LOPQ, one of the most accurate datastructures at this time.
-To better understand it, I highly recommend the following video: https://www.youtube.com/watch?v=RgxCaiQ-kig.
+We're trying to find the closest match to a descriptor as fast as possible with as little storage as possible.
+Without a clever data structure this would require calculating the distance between every vector and storing every vector on disk (=linear storage).
 
+The faiss library developed by Facebook AI Research uses state-of-the-art data structures for nearest neighbour search.
+Here we'll briefly (try to) explain the concepts behind LOPQ, one of the best performing datastructures at this time.
+To better understand it, I highly recommend the following video: https://www.youtube.com/watch?v=RgxCaiQ-kig.
 ### Q
 
 Quantisation is essentially just running k-means. 
 Please read [_Scalable Recognition > How It Works > Scaling Up > K-means_](https://github.com/DaanS8/ScalableRecognition#k-means) to understand the algorithm.
 K-means is a clustering algorithm, it assigns every vector to one of the k clusters. 
+To search the nearest neighbour only the cluster centers need to be checked.
 
 ![LOPQ](img_rm/lopq_a.png)
 
-To search the closest vector using quantisation, the only distance calculation needed is between the cluster centers.
-An inverted file index keeps track of which vectors are assigned to which cluster center.
 
+- Asymptotic runtime of k-means: `O(N.k.d.i)`.
+- Storage requirements: `N.log₂(k) + k.d.32b`. 
+Which cluster center is closest + cluster centers, storing a vector requires a 32-bit float per dimension.
 
-The image below shows an example of an inverted list.
-Every cluster center has a list of ids of which vector is assigned to it.
-If we use the ids in the inverted file list as correct matches we lose information.
-The true distance is lost, it's possible to re-rank the vectors by storing them, but this requires linear storage.
-Note that this is the approach used in [Scalable Recognition](https://www.github.com/DaanS8/ScalableRecognition), but then with a tree.
-There we use the ids in the inverted file list to assign a score to every image and finally using stored vectors test the best results.
-This requires linear storage which can be expensive for extremely large datasets!
+Here N is the total amount of vectors, k is the amount of cluster centers, d is the dimensionality of the vectors and i is the amount of iterations.
+We have a large N, k and d. Running k-means is computationally expensive.
+To keep track of which cluster center is closest to a descriptor, every descriptor only needs to keep track of `log₂(k)` bits.
+This is a high compression rate: `N.log₂(k) + k.d.32b << N.d.32b`. 
+
+Looking up which vectors are closest to which cluster center is slow if every vector needs to be checked.
+Often an inverted file index is used, the image below gives an example of an inverted file index.
+For every cluster center `q(x)`, a list of all descriptor ids that are closest to it is stored.
+This drastically reduces lookup time.
 
 ![Inverted file list](img_rm/inverted_list.png)
 
 ### PQ
 
-Product Quantisation 
+Product Quantisation improves k-means by reducing the amount of runtime needed for the same accuracy.
+It works by running k-means on sub-vectors of the original vectors.
+An example makes this way more clear, checkout the image below.
+In the example the dimensionality is two, and we split the vectors up in two sub-vectors (`m=2`).
+So we first run k-means with `k'=8` only on the x-values of the vectors, and afterwards on the y-values.
+Running k-means twice with a k of 8 results in 8² possible combinations of where a vector can be closest to.
+
+- Asymptotic runtime of PQ: `O(m.N.k'.d.i)`. 
+- Storage requirements: `m.N.log₂(k') + k'.d.32b`. Storing cluster centers requires `m.(d/m).32b` per `k'`.
+
+Why is this an improvement?
+Take our case: `N=100_000_000, d=128, k=1_000_000, i=1` -> `N.d.k.i = 1.28 * 10¹⁶`.
+With `m=4` to reach the same amount of cluster centers we only need `k'=32` because `32⁴ > 1_000_000`.
+`m.N.k'.d.i = 1.28 * 10⁸`, 8 orders smaller than running k-means.
+The cluster centers of k-means are more precise, but increasing k' for more cluster centers still takes way less time than normal quantisation.
+
 
 ![LOPQ](img_rm/lopq_b.png)
 
 ### OPQ
 
-Optimised Product Quantisation
+Optimised Product Quantisation reduces the distortion of PQ. 
+The general approach of the algorithm is as followed:
 
+- mean center the data 
+- Perform Eigen decomposition 
+- Use eigen allocation to compute permutation matrix P 
+- Compute rotation matrix R= QPᵀ 
+- Rotate all data by R⁻¹ 
+- Perform Product Quantisation in rotated space
+
+So we use Principal Component Analysis to rotate the data so that the distortion of PQ is minimised. 
+This approach is directly taken form the recommended [video](https://www.youtube.com/watch?v=RgxCaiQ-kig&t=3431s), please watch it for more implementation details.
+
+Note that calculating the rotation matrix for large N is computationally expensive, but it does increase performance.
 ![LOPQ](img_rm/lopq_c.png)
 
 ### LOPQ
 
-Locally Optimised Product Quantisation
+Locally Optimised Product Quantisation further improves OPQ.
+OPQ uses the (wrong) assumption that the data is normally distributed.
+In the real world, f.e. SIFT vectors, are multimodal.
+
+LOPQ uses a coarse quantizer, it runs k-means with a low K.
+In every found cluster group, run OPQ using only vectors of that group.
+
+If the initial k is sufficiently low, this is computationally doable.
+Because of the lower amount of vectors in every group, calculating the rotation matrix is computationally doable as well.
+So it uses k-means to group multimodal data and uses the performance benefits of OPQ to achieve great accuracy and performance.
+
 
 ![LOPQ](img_rm/lopq_d.png)
 
+Here a final overview of the evolution of quantisation. 
+
 ![LOPQ](img_rm/lopq.png)
+
