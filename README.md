@@ -70,8 +70,10 @@ Please read [_Scalable Recognition > How It Works > Scaling Up > K-means_](https
 K-means is a clustering algorithm, it assigns every vector to one of the k clusters. 
 To search the nearest neighbour only the cluster centers need to be checked.
 
-<img alt="LOPQ" src="img_rm/lopq_a.png" width="50%"/>
-![LOPQ](img_rm/lopq_a.png)
+<p align="center">
+    <img alt="LOPQ" src="img_rm/lopq_a.png" width="50%"/>
+</p>
+
 
 
 - Asymptotic runtime of k-means: `O(N.k.d.i)`.
