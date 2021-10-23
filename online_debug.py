@@ -117,15 +117,16 @@ def main(kp_db, index):
 
                 start = time.time()
                 good = dict()
-
-                counter = sum([1 if len(tmp) > NB_OF_IMAGES_CONSIDERED else 0 for tmp, _ in results.values()])
-                while NB_OF_IMAGES_CONSIDERED > 5 > counter:
-                    NB_OF_IMAGES_CONSIDERED -= 1
-                    counter = sum([1 if len(tmp) > NB_OF_IMAGES_CONSIDERED else 0 for tmp, _ in results.values()])
+                
+                minimum_matches = NB_OF_MATCHES_CONSIDERED
+                counter = sum([1 if len(tmp) > minimum_matches else 0 for tmp, _ in results.values()])
+                while minimum_matches > 5 > counter:
+                    minimum_matches -= 1
+                    counter = sum([1 if len(tmp) > minimum_matches else 0 for tmp, _ in results.values()])
 
                 for k, v in results.items():
                     db, matches = v
-                    if len(db) > NB_OF_IMAGES_CONSIDERED:
+                    if len(db) > minimum_matches:
                         src_pts = np.float32(db).reshape(-1, 1, 2)
                         dst_pts = np.float32([m.pt for m in matches]).reshape(-1, 1, 2)
                         M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
