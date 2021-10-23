@@ -21,7 +21,7 @@ KpListName = "kp_lookup_new.f"
 
 
 # The amount of images returned in online.initial_scoring()
-NB_OF_IMAGES_CONSIDERED = 10
+NB_OF_MATCHES_CONSIDERED = 10
 
 # ONLY SET FALSE IF IMAGES ARE ALREADY RESIZED AND GRAYSCALED
 RESIZE_IMAGES = False
