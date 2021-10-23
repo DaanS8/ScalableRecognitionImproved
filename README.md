@@ -90,7 +90,9 @@ Often an inverted file index is used, the image below gives an example of an inv
 For every cluster center `q(x)`, a list of all descriptor ids that are closest to it is stored.
 This drastically reduces lookup time.
 
-![Inverted file list](img_rm/inverted_list.png)
+<p align="center">
+    <img alt="Inverted file list" src="img_rm/inverted_list.png" width="50%"/>
+</p>
 
 ### PQ
 
@@ -110,8 +112,9 @@ With `m=4` to reach the same amount of cluster centers we only need `k'=32` beca
 `m.N.k'.d.i = 1.28 * 10⁸`, 8 orders smaller than running k-means.
 The cluster centers of k-means are more precise, but increasing k' for more cluster centers still takes way less time than normal quantisation.
 
-
-![LOPQ](img_rm/lopq_b.png)
+<p align="center">
+    <img alt="PQ" src="img_rm/lopq_b.png" width="50%"/>
+</p>
 
 ### OPQ
 
@@ -129,7 +132,10 @@ So we rotate the data so that the distortion of PQ is minimised.
 This approach is directly taken form the recommended [video](https://www.youtube.com/watch?v=RgxCaiQ-kig&t=3431s), please watch it for more implementation details.
 
 Note that calculating the rotation matrix for large N is computationally expensive, but it does increase performance.
-![LOPQ](img_rm/lopq_c.png)
+
+<p align="center">
+    <img alt="OPQ" src="img_rm/lopq_c.png" width="50%"/>
+</p>
 
 ### LOPQ
 
@@ -145,8 +151,9 @@ If the initial k is sufficiently low, this is computationally doable.
 Because of the lower amount of vectors in every group, calculating the rotation matrix is computationally doable as well.
 So it uses k-means to group multimodal data and uses the performance benefits of OPQ to achieve great accuracy and performance.
 
-
-![LOPQ](img_rm/lopq_d.png)
+<p align="center">
+    <img alt="LOPQ" src="img_rm/lopq_d.png" width="50%"/>
+</p>
 
 ### OPQ32_64,IVF262144(IVF512,PQ32x4fs,RFlat),PQ32x4fsr
 
