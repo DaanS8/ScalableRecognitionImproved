@@ -166,15 +166,15 @@ This is the used factory index for my dataset of 200M SIFT vectors. Here I'll ex
 
 ### Implementation
 
-We now know how we can efficiently search nearby vectors in a database. Searching the whole database for getting the x closest vectors, getting the closest 10 SIFT vectors for all 2000 query vectors in a database of 200M vectors only takes 45ms. Getting the closest matches is the same principle used for detecting objects between 2 images, read [_Scalable Recognition > How It Works > The Basics_](https://github.com/DaanS8/ScalableRecognition#the-basics). If we now just sort all the descriptor matches out of the database per image, we can use that as the found matches per image.
+We now know how we can efficiently search nearby vectors in a database. Searching a database of 200M vectors to get the closest 10 SIFT vectors for all 2000 query vectors only costs 45ms of runtime. Getting the closest matches is the same principle used for detecting objects between 2 images, read [_Scalable Recognition > How It Works > The Basics_](https://github.com/DaanS8/ScalableRecognition#the-basics). If we now just sort all the descriptor matches per image, we can use that as the found matches per image.
 
 Note that for geometric verification the corresponding keypoints of every descriptor match is needed. 
 Therefore, all keypoints for every descriptor is stored in memory.
 For every descriptor match we store the corresponding keypoint at the correct image. 
-This makes it easier for the final geometric verification match.
+This makes it easier for the final geometric verification step.
 
 Only images with at least ten matches are considered for geometric verifications. 
-If this results in less than five image matches, all images with 9 matches are considered, 8, ..., 5; untill this results in a minimum of five images to consider, or the minimum of 5 matches is reached. After geometric verification a certainty percentage/certain|uncertain boolean is given to for every match the exact same way as in [_Scalable Recognition > How It Works > Final Scoring_](https://github.com/DaanS8/ScalableRecognition#final-scoring).
+If this results in less than five image matches, all images with 9 matches are considered, 8, ..., 6; untill this results in a minimum of five images to consider, or the minimum of 6 matches is reached. After geometric verification a certainty percentage/certain|uncertain boolean is given to every match the exact same way as in [_Scalable Recognition > How It Works > Final Scoring_](https://github.com/DaanS8/ScalableRecognition#final-scoring).
 
 The total search time for an image with dimensions 1080x1080 in a database of 100_000 images currently is 1.16s with an accuracy of 96.5% for my own dataset. The index takes up 6.8GB and the keypoints take up another 7GB. Both of these need to be in memory for running the program efficiently. Note that the search time for the index is only 45ms and the total time requires 1160ms. Almost 65% of the total lookup time currently is needed to sort every kp to the correct image. This is slow probably because of poor memory usage and the usage of many native python functions such as loops which are inherently slow.
 
@@ -182,7 +182,7 @@ The total search time for an image with dimensions 1080x1080 in a database of 10
 
 This method reaches an accuracy of 96.5% for the exact same test and dataset compared to the original repository [Scalable Recognition](https://github.com/DaanS8/ScalableRecognition) that achieved an accuracy of 88.5%.
 
-- To further increase accuracy it might be that a trained kp & des extractor might outperform SIFT (f.e. [DELF](https://www.researchgate.net/publication/322057981_Large-Scale_Image_Retrieval_with_Attentive_Deep_Local_Features)). 
+- To further increase accuracy a trained kp & des extractor might outperform SIFT (f.e. [DELF](https://www.researchgate.net/publication/322057981_Large-Scale_Image_Retrieval_with_Attentive_Deep_Local_Features)). 
 
 - Decreasing the image lookup time seems deffinetly possible. 
 Re-writing the code in C (faiss is a Python and C library) will make it faster. 
