@@ -109,7 +109,7 @@ Running k-means twice with a k of 8 results in 8² possible combinations of wher
 
 Why is this an improvement?
 Take our case: `N=100_000_000, d=128, k=1_000_000, i=1`. Normal k-means: `N.d.k.i = 1.28 * 10¹⁶`.
-With `m=4` to reach the same amount of cluster centers we only need `k'=32` because `32⁴ > 1_000_000`.
+If we take `m=4`, we only need `k'=32` to reach the same amount of cluster centers in normal k-means, because `32⁴ > 1_000_000`.
 `m.N.k'.d.i = 1.28 * 10⁸`, 8 orders smaller than running k-means.
 The cluster centers of k-means are more precise, but increasing k' for more cluster centers still takes way less time than normal quantisation.
 
