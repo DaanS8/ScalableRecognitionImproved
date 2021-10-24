@@ -1,8 +1,9 @@
 # Scalable Recognition Improved
 A python implementation for a scalable object detection framework. 
+
 This is an improved version of the [Scalable Recognition repository](https://www.github.com/DaanS8/ScalableRecognition) that was based on the paper [Scalable Recognition with a Vocabulary Tree](https://ieeexplore.ieee.org/document/1641018). 
 Due to the use of state-of-the-art datastructures for nearest neighbor search the efficiency and accuracy was improved dramatically.
-F.e. on my dataset of 100,000 images the original repository achieved an accuracy of 85,5% with a process time of 1,33s/image.
+F.e. on my dataset of 100,000 images the original repository achieved an accuracy of 85.5% with a process time of 1.33s/image.
 This repository achieved an accuracy of 96.5% with a process time of 1.16s/image.
 
 ## Instalation
