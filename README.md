@@ -79,7 +79,7 @@ To search the nearest neighbour only the cluster centers need to be checked.
 
 - Asymptotic runtime of k-means: `O(N.k.d.i)`.
 - Storage requirements: `N.log₂(k) + k.d.32b`. 
-Which cluster center is closest + cluster centers, storing a vector requires a 32-bit float per dimension.
+Which cluster center is closest + cluster centers; storing a vector requires a 32-bit float per dimension.
 
 Here N is the total amount of vectors, k is the amount of cluster centers, d is the dimensionality of the vectors and i is the amount of iterations.
 We have a large N, k and d. Running k-means is computationally expensive.
