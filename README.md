@@ -143,11 +143,9 @@ Note that calculating the rotation matrix for large N is computationally expensi
 [Locally Optimised Product Quantisation](https://ieeexplore.ieee.org/document/6909695) further improves OPQ.
 OPQ uses the (wrong) assumption that the data is normally distributed.
 In the real world, f.e. SIFT vectors, are multimodal.
-
-LOPQ uses a coarse quantizer, it runs k-means with a low K.
-In every found cluster group, run OPQ using only vectors of that group.
-
-If the initial k is sufficiently low, this is computationally doable.
+ 
+LOPQ uses a coarse quantizer, it runs k-means with a low K. If the K is sufficiently low, this is computationally doable.
+Then, in every found cluster group OPQ is performed using only vectors of that group.
 
 Because of the lower amount of vectors in every group, calculating the rotation matrix is computationally doable as well.
 So it uses k-means to group multimodal data and uses the performance benefits of OPQ to achieve great accuracy and performance.
