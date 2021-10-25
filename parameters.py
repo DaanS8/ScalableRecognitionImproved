@@ -9,6 +9,8 @@ MAX_IMAGE_SIZE = 1080
 # database structures using different vectors are given, under the menu item "Typical use cases and benchmarks".
 FACTORY_INDEX = "OPQ32_64,IVF262144(IVF512,PQ32x4fs,RFlat),PQ32x4fsr"
 
+# How many closest descriptors does index need to return?
+K = 10
 
 # The number _,IVFxxxxxx_,_ defines how large your training set needs to be.
 # The number of descriptors used in the training set lie between 30*xxxxxx` and `256*xxxxxx.
@@ -25,3 +27,5 @@ NB_OF_MATCHES_CONSIDERED = 10
 
 # ONLY SET FALSE IF IMAGES ARE ALREADY RESIZED AND GRAYSCALED
 RESIZE_IMAGES = False
+
+

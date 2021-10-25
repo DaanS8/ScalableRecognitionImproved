@@ -11,10 +11,9 @@ from collections import OrderedDict
 import parallelize
 import heapq
 from parameters import *
+import online
 
 test_folder = "testset/"
-K = 10
-
 
 
 def _look_for_sub_test_folders(test_folder):
@@ -35,13 +34,12 @@ def _look_for_sub_test_folders(test_folder):
     return test_folders
 
 
-def load_index_db():
+def main():
+    start = time.time()
     kp_db = utils.get_pickled(KpListName)
     index = faiss.read_index(IndexFileName)
-    return kp_db, index
+    print("loading the database took {}s.".format(int(time.time() - start)))
 
-
-def main(kp_db, index):
     print("Length of kp_db {:_}. Length of index {:_}. Equal? {}."
           .format(len(kp_db), index.ntotal, str(len(kp_db) == index.ntotal)))
     folders = _look_for_sub_test_folders(test_folder)
@@ -68,7 +66,9 @@ def main(kp_db, index):
         no_result = [0, 0]  # [No db match, Has db match] of all test images with no result after geometrical verification
 
         start = time.time()
+        # Generate all image paths in folder
         paths = [folder + file_name for file_name in os.listdir(folder)]
+        # Grayscale and resize all images in folder
         parallelize.parallelize_resize(paths)
         t0 += time.time() - start
 
@@ -76,21 +76,24 @@ def main(kp_db, index):
         print("Start processing folder '{}' with index '{}'.".format(folder, IndexFileName))
         for path in paths:
             try:
+                # Read image and calculate kp and des
                 start = time.time()
                 img = cv.imread(path, cv.IMREAD_GRAYSCALE)
                 kp, des = utils.sift.detectAndCompute(img, None)
-
                 t1 += time.time() - start
 
+                # Search index
                 start = time.time()
                 _, I = index.search(des, K)
                 t2 += time.time() - start
 
+                # Process index results:
+                # For every descriptor match, store the corresponding keypoints at the correct image
                 start = time.time()
                 results = dict()
-                for kp_i, indices, distances in zip(kp, I, D):
+                for kp_i, indices in zip(kp, I):
                     kps_db = kp_db[indices]
-                    for i, k, d in zip(indices, kps_db, distances):
+                    for i, k in zip(indices, kps_db):
                         id = int(k[1])
                         db, match = results.get(id, [[], []])
                         db.append(k[0])
@@ -98,6 +101,7 @@ def main(kp_db, index):
                         results[id] = db, match
                 t3 += time.time() - start
 
+                # Calculations for keeping track of accuracy scores
                 start = time.time()
                 if "Junk" not in path:
                     correct_id = int(path[path.rfind("/") + 1:-4])
@@ -115,33 +119,23 @@ def main(kp_db, index):
                 result[correct_index] = result.get(correct_index, 0) + 1
                 t4 += time.time() - start
 
+                # Final scoring
                 start = time.time()
-                good = dict()
-                
-                minimum_matches = NB_OF_MATCHES_CONSIDERED
-                counter = sum([1 if len(tmp) > minimum_matches else 0 for tmp, _ in results.values()])
-                while minimum_matches > 5 > counter:
-                    minimum_matches -= 1
-                    counter = sum([1 if len(tmp) > minimum_matches else 0 for tmp, _ in results.values()])
-
-                for k, v in results.items():
-                    db, matches = v
-                    if len(db) > minimum_matches:
-                        src_pts = np.float32(db).reshape(-1, 1, 2)
-                        dst_pts = np.float32([m.pt for m in matches]).reshape(-1, 1, 2)
-                        M, mask = cv.findHomography(src_pts, dst_pts, cv.RANSAC, 5.0)
-                        final = np.count_nonzero(mask)
-                        if final > 5:
-                            good[k] = final
+                good = online.final_scoring(results)
                 t5 += time.time() - start
 
+                # Certainty percentage calculations
                 start = time.time()
                 if len(good) > 0:
+                    # Sort results
                     final_result = {k: v for k, v in sorted(good.items(), key=lambda item: item[1], reverse=True)}
 
+                    # Certainty calculations preperation
                     minimal_value = max(final_result.values()) * 0.2
                     good = {k: v for k, v in final_result.items() if v >= minimal_value}
                     sum_values = sum(good.values())
+
+                    # Keep track of the guess was correct or not
                     first = True
                     for key, value in sorted(good.items(), key=lambda item: item[1], reverse=True):
                         certainty_percentage = min(100, value - 5) * value / sum_values
@@ -173,6 +167,8 @@ def main(kp_db, index):
                 t6 += time.time() - start
             except Exception as e:
                 print("Error at {} with error: {}".format(path, e))
+
+        # Print accuracy numbers for every folder
         print("position index", OrderedDict(sorted(result.items())))
         print("Certainty percentage correct", OrderedDict(sorted(percentage_correct.items())))
         print("Certainty percentage incorrect", OrderedDict(sorted(percentage_incorrect.items())))
@@ -180,6 +176,7 @@ def main(kp_db, index):
         print("Uncertain", uncertain)
         print("No Result", no_result)
 
+    # Print process time for the used index
     print("Average time per image: {:.2f}s.".format((time.time() - start_total)/processed_images))
 
     sum_times = (t0 + t1 + t2 + t3 + t4 + t5 + t6) / 100
@@ -189,9 +186,7 @@ def main(kp_db, index):
           "Processing search {:.2f}, Accuracy Calculations {:.2f},Geometric Verification {:.2f}, Certainty Calculation {:.2f}."
           .format(t0, t1, t2, t3, t4, t5, t6))
 
-if __name__ == "__main__":
-    start = time.time()
-    kp_db, index = load_index_db()
-    print("loading the database took {}s.".format(int(time.time() - start)))
 
-    main(kp_db, index)
+if __name__ == "__main__":
+    main()
+

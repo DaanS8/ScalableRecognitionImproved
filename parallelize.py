@@ -7,6 +7,7 @@ import numpy as np
 import utils
 
 
+# helpers to use multiprocessing for certain functions
 def parallelize_resize(paths):
     with Pool() as p:
         p.map(resize.resize_gray_store, paths)
